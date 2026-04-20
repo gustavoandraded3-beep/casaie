@@ -77,7 +77,17 @@ export function PropertyDetail({ property: p, onClose, onEdit, onDelete }: Props
               <Star size={20} className={p.favorite ? 'fill-amber-400 text-amber-400' : ''} />
             </button>
           </div>
-          {p.city && <p className="text-sm text-gray-400 mt-0.5">{p.city}</p>}
+          {(p.city || p.county) && (
+            <p className="text-sm text-gray-400 mt-0.5">
+              {[p.city, p.county].filter(Boolean).join(', ')}
+              {p.eircode && <span className="ml-2 text-gray-400">· {p.eircode}</span>}
+            </p>
+          )}
+          {p.trainStation && (
+            <p className="text-xs text-gray-400 mt-0.5">
+              🚂 {p.trainStation}{p.trainMinutesToDublin ? ` · ${p.trainMinutesToDublin} min até Dublin` : ''}
+            </p>
+          )}
 
           {/* Development link */}
           {dev && (
@@ -141,6 +151,9 @@ export function PropertyDetail({ property: p, onClose, onEdit, onDelete }: Props
         <MetricCard label="Quartos"  value={p.rooms || '—'} />
         <MetricCard label="Data visita" value={p.visitDate || '—'} />
         <MetricCard label="Visitado" value={p.visited ? '✓ Sim' : 'Não'} color={p.visited ? 'green' : undefined} />
+        {p.eircode && <MetricCard label="Eircode" value={p.eircode} />}
+        {p.trainStation && <MetricCard label="Estação" value={p.trainStation} />}
+        {p.trainMinutesToDublin ? <MetricCard label="Trem p/ Dublin" value={`${p.trainMinutesToDublin} min`} /> : null}
       </div>
 
       {/* Pros / Cons */}

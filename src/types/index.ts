@@ -53,11 +53,11 @@ export interface AffordableSchemeData {
 export interface Property {
   id: string;
   name: string;
-  city: string;
-  website: string;
+  city: string;       // kept for backward compat (existing data)
+  website: string;    // kept for backward compat
   area: number | '';
   rooms: number | '';
-  price: number | '';        // For Affordable: use minSalePrice as the purchase price
+  price: number | '';
   visitDate: string;
   visited: boolean;
   pros: string;
@@ -68,11 +68,17 @@ export interface Property {
 
   houseType?: HouseType;
   developmentId?: string;
-  brochureUrl?: string;
-  imageUrl?: string;
+  brochureUrl?: string;   // kept for backward compat
+  imageUrl?: string;      // floor plan / house image (uploaded as base64 or URL)
+
+  // v4 — new location & transport fields
+  county?: string;           // Irish county (e.g. Kildare, Wicklow)
+  eircode?: string;          // approximate Eircode (e.g. W12 AB34)
+  trainStation?: string;     // nearest train/DART/Luas station
+  trainMinutesToDublin?: number | ''; // commute time to Dublin city centre (mins)
 
   isAffordableScheme?: boolean;
-  affordableData?: AffordableSchemeData;  // populated when isAffordableScheme = true
+  affordableData?: AffordableSchemeData;
 }
 
 // ─── Affordable Housing Scheme applications ───────────────────────────────────

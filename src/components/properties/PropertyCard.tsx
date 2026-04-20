@@ -68,10 +68,15 @@ export function PropertyCard({ property: p, onView, onEdit }: Props) {
         <div className="flex items-start justify-between gap-2 mb-1">
           <div className="min-w-0">
             <h3 className="font-semibold text-gray-900 truncate">{p.name || 'Sem nome'}</h3>
-            {p.city && (
+            {(p.city || p.county) && (
               <span className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
                 <MapPin size={11} />
-                {p.city}
+                {[p.city, p.county].filter(Boolean).join(', ')}
+              </span>
+            )}
+            {p.trainStation && (
+              <span className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
+                🚂 {p.trainStation}{p.trainMinutesToDublin ? ` · ${p.trainMinutesToDublin} min` : ''}
               </span>
             )}
           </div>

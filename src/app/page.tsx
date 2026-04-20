@@ -40,8 +40,8 @@ export default function HomePage() {
   const [editTarget, setEditTarget] = useState<Property | undefined>();
   const [viewTarget, setViewTarget] = useState<Property | undefined>();
 
-  const cities = useMemo(
-    () => [...new Set(properties.map((p) => p.city).filter(Boolean))].sort(),
+  const counties = useMemo(
+    () => [...new Set(properties.map((p) => p.county).filter(Boolean) as string[])].sort(),
     [properties]
   );
 
@@ -54,7 +54,7 @@ export default function HomePage() {
         !`${p.name} ${p.city}`.toLowerCase().includes(search.toLowerCase())
       )
         return false;
-      if (filterCity && p.city !== filterCity) return false;
+      if (filterCity && p.county !== filterCity) return false;
       if (filterVisited === 'sim' && !p.visited) return false;
       if (filterVisited === 'nao' && p.visited) return false;
       if (filterRating && p.rating < Number(filterRating)) return false;
@@ -180,10 +180,10 @@ export default function HomePage() {
       {showFilters && (
         <div className="bg-white border border-gray-100 rounded-xl p-4 mb-4 flex flex-wrap gap-3 items-end">
           <div className="flex flex-col gap-1 min-w-[140px]">
-            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Cidade</label>
+            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Condado</label>
             <Select value={filterCity} onChange={(e) => setFilterCity(e.target.value)}>
-              <option value="">Todas</option>
-              {cities.map((c) => <option key={c}>{c}</option>)}
+              <option value="">Todos</option>
+              {counties.map((c) => <option key={c}>{c}</option>)}
             </Select>
           </div>
           <div className="flex flex-col gap-1 min-w-[140px]">

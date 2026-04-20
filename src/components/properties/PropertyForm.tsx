@@ -25,7 +25,7 @@ const empty: PropertyDraft = {
   visitDate: '', visited: false,
   pros: '', cons: '', rating: 0, favorite: false,
   houseType: '', developmentId: undefined,
-  brochureUrl: '', imageUrl: '',
+  brochureUrl: '', imageUrl: '', plotNumber: '',
   eircode: '', trainStation: '', trainMinutesToDublin: '',
   isAffordableScheme: false,
 };
@@ -50,7 +50,18 @@ export function PropertyForm({ initial, onSave, onClose }: Props) {
   const set = <K extends keyof PropertyDraft>(k: K, v: PropertyDraft[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
-  const validate = (): boolean => {
+  const selectedDev = form.developmentId
+    ? developments.find(d => d.id === form.developmentId)
+    : null;
+
+  // When a development is selected, location/transport come from there
+  const effectiveCounty    = selectedDev?.county    || form.county    || '';
+  const effectiveCity      = selectedDev?.city      || form.city      || '';
+  const effectiveEircode   = selectedDev?.eircode   || form.eircode   || '';
+  const effectiveStation   = selectedDev?.trainStation || form.trainStation || '';
+  const effectiveTrain     = selectedDev?.trainMinutesToDublin ?? form.trainMinutesToDublin ?? '';
+
+  const isLinked = !!selectedDev;
     const errs: typeof errors = {};
     if (!form.name.trim()) errs.name = 'Nome obrigatório';
     if (!form.price || Number(form.price) <= 0) errs.price = 'Preço obrigatório';
@@ -119,53 +130,71 @@ export function PropertyForm({ initial, onSave, onClose }: Props) {
           </Select>
         </FormField>
 
-        {/* Condado */}
+        {/* Condado — inherited from dev or editable */}
         <FormField label="Condado">
-          <Select value={form.county || ''} onChange={(e) => set('county', e.target.value)}>
-            <option value="">Selecionar condado...</option>
-            {IRISH_COUNTIES.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </Select>
+          {isLinked ? (
+            <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-700">
+              📍 {effectiveCounty || 'Não definido no empreendimento'}
+              <span className="text-xs text-blue-400 ml-auto">do empreendimento</span>
+            </div>
+          ) : (
+            <Select value={form.county || ''} onChange={(e) => set('county', e.target.value)}>
+              <option value="">Selecionar condado...</option>
+              {IRISH_COUNTIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </Select>
+          )}
         </FormField>
 
         {/* Cidade */}
         <FormField label="Cidade / Localização">
-          <Input
-            value={form.city}
-            onChange={(e) => set('city', e.target.value)}
-            placeholder="Ex: Naas, Sallins, Newbridge..."
-          />
+          {isLinked ? (
+            <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-700">
+              🏙 {effectiveCity || 'Não definido'}
+              <span className="text-xs text-blue-400 ml-auto">do empreendimento</span>
+            </div>
+          ) : (
+            <Input value={form.city} onChange={(e) => set('city', e.target.value)}
+              placeholder="Ex: Naas, Sallins..." />
+          )}
         </FormField>
 
         {/* Eircode */}
-        <FormField label="Eircode aproximado" hint="Ex: W91 AB12">
+        <FormField label="Eircode aproximado">
+          {isLinked ? (
+            <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-700">
+              {effectiveEircode || 'Não definido'}
+              <span className="text-xs text-blue-400 ml-auto">do empreendimento</span>
+            </div>
+          ) : (
+            <Input value={form.eircode || ''} onChange={(e) => set('eircode', e.target.value.toUpperCase())}
+              placeholder="W91 AB12" maxLength={8} />
+          )}
+        </FormField>
+
+        {/* Número do Lote / Planta */}
+        <FormField label="Nº da Casa na Planta" hint="Número do lote conforme a planta do empreendimento">
           <Input
-            value={form.eircode || ''}
-            onChange={(e) => set('eircode', e.target.value.toUpperCase())}
-            placeholder="W91 AB12"
-            maxLength={8}
+            value={form.plotNumber || ''}
+            onChange={(e) => set('plotNumber', e.target.value)}
+            placeholder="Ex: 12, B4, Lote 7..."
           />
         </FormField>
 
         {/* Área */}
         <FormField label="Tamanho (m²)">
-          <Input
-            type="number" min={0}
-            value={form.area}
+          <Input type="number" min={0} value={form.area}
             onChange={(e) => set('area', e.target.value === '' ? '' : Number(e.target.value))}
-            placeholder="85"
-          />
+            placeholder="85" />
         </FormField>
 
-        {/* Quartos */}
+        {/* Quartos — apenas 3 ou 4 */}
         <FormField label="Quartos">
-          <Input
-            type="number" min={0}
-            value={form.rooms}
-            onChange={(e) => set('rooms', e.target.value === '' ? '' : Number(e.target.value))}
-            placeholder="3"
-          />
+          <Select value={form.rooms === '' ? '' : String(form.rooms)}
+            onChange={(e) => set('rooms', e.target.value === '' ? '' : Number(e.target.value))}>
+            <option value="">Selecionar...</option>
+            <option value="3">3 quartos</option>
+            <option value="4">4 quartos</option>
+          </Select>
         </FormField>
 
         {/* Valor */}
@@ -180,24 +209,6 @@ export function PropertyForm({ initial, onSave, onClose }: Props) {
             {errors.price && <p className="text-xs text-red-500 mt-0.5">{errors.price}</p>}
           </FormField>
         </div>
-
-        {/* Transporte */}
-        <FormField label="Estação mais próxima" hint="Irish Rail / DART / Luas">
-          <Input
-            value={form.trainStation || ''}
-            onChange={(e) => set('trainStation', e.target.value)}
-            placeholder="Ex: Sallins, Hazelhatch, Newbridge..."
-          />
-        </FormField>
-
-        <FormField label="Tempo de trem até Dublin (min)" hint="Tempo aproximado até Heuston ou Connolly">
-          <Input
-            type="number" min={0} max={240}
-            value={form.trainMinutesToDublin ?? ''}
-            onChange={(e) => set('trainMinutesToDublin', e.target.value === '' ? '' : Number(e.target.value))}
-            placeholder="Ex: 35"
-          />
-        </FormField>
 
         {/* Data da visita */}
         <FormField label="Data da Visita (Open Viewing)">

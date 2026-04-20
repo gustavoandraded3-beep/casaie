@@ -21,10 +21,18 @@ export const HOUSE_TYPE_LABELS: Record<Exclude<HouseType, ''>, string> = {
 export interface Development {
   id: string;
   name: string;
-  city: string;
+  city: string;       // cidade (ex: Naas)
+  county?: string;    // condado (ex: Kildare)
   website: string;
   brochureUrl?: string;
-  imageUrl?: string;
+  imageUrl?: string;  // logo/photo
+  siteMapImage?: string; // planta do empreendimento (base64 or URL)
+
+  // Transport — shared by all properties in this development
+  eircode?: string;
+  trainStation?: string;
+  trainMinutesToDublin?: number | '';
+
   createdAt: string;
 }
 
@@ -53,7 +61,8 @@ export interface AffordableSchemeData {
 export interface Property {
   id: string;
   name: string;
-  city: string;       // kept for backward compat (existing data)
+  city: string;       // kept for backward compat
+  county?: string;    // used when standalone (no development)
   website: string;    // kept for backward compat
   area: number | '';
   rooms: number | '';
@@ -68,14 +77,14 @@ export interface Property {
 
   houseType?: HouseType;
   developmentId?: string;
-  brochureUrl?: string;   // kept for backward compat
-  imageUrl?: string;      // floor plan / house image (uploaded as base64 or URL)
+  brochureUrl?: string;
+  imageUrl?: string;
+  plotNumber?: string;  // house number on the development site map (ex: "12", "B4")
 
-  // v4 — new location & transport fields
-  county?: string;           // Irish county (e.g. Kildare, Wicklow)
-  eircode?: string;          // approximate Eircode (e.g. W12 AB34)
-  trainStation?: string;     // nearest train/DART/Luas station
-  trainMinutesToDublin?: number | ''; // commute time to Dublin city centre (mins)
+  // transport — used for standalone properties (inherited from dev when linked)
+  eircode?: string;
+  trainStation?: string;
+  trainMinutesToDublin?: number | '';
 
   isAffordableScheme?: boolean;
   affordableData?: AffordableSchemeData;

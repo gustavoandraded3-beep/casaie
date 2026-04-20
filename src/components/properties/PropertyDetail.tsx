@@ -48,6 +48,15 @@ export function PropertyDetail({ property: p, onClose, onEdit, onDelete }: Props
     ? developments.find((d) => d.id === p.developmentId)
     : null;
 
+  // Effective transport — inherited from dev when linked
+  const effectiveStation = dev?.trainStation || p.trainStation;
+  const effectiveTrain   = dev?.trainMinutesToDublin ?? p.trainMinutesToDublin;
+  const effectiveEircode = dev?.eircode || p.eircode;
+  const effectiveCity    = dev?.city || p.city;
+  const effectiveCounty  = dev?.county || p.county;
+
+  const [viewingImage, setViewingImage] = React.useState<string | null>(null);
+
   const houseTypeLabel = p.houseType
     ? HOUSE_TYPE_LABELS[p.houseType as keyof typeof HOUSE_TYPE_LABELS]
     : null;
@@ -77,15 +86,15 @@ export function PropertyDetail({ property: p, onClose, onEdit, onDelete }: Props
               <Star size={20} className={p.favorite ? 'fill-amber-400 text-amber-400' : ''} />
             </button>
           </div>
-          {(p.city || p.county) && (
+          {(effectiveCity || effectiveCounty) && (
             <p className="text-sm text-gray-400 mt-0.5">
-              {[p.city, p.county].filter(Boolean).join(', ')}
-              {p.eircode && <span className="ml-2 text-gray-400">· {p.eircode}</span>}
+              {[effectiveCity, effectiveCounty].filter(Boolean).join(', ')}
+              {effectiveEircode && <span className="ml-2 text-gray-400">· {effectiveEircode}</span>}
             </p>
           )}
-          {p.trainStation && (
+          {effectiveStation && (
             <p className="text-xs text-gray-400 mt-0.5">
-              🚂 {p.trainStation}{p.trainMinutesToDublin ? ` · ${p.trainMinutesToDublin} min até Dublin` : ''}
+              🚂 {effectiveStation}{effectiveTrain ? ` · ${effectiveTrain} min até Dublin` : ''}
             </p>
           )}
 
@@ -137,11 +146,49 @@ export function PropertyDetail({ property: p, onClose, onEdit, onDelete }: Props
         </div>
       </div>
 
-      {/* Property image */}
+      {/* Property image — clickable thumbnail */}
       {p.imageUrl && (
-        <div className="w-full h-48 rounded-xl overflow-hidden bg-gray-100 mb-4">
-          <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover"
-            onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }} />
+        <div
+          className="w-full h-48 rounded-xl overflow-hidden bg-gray-100 mb-4 cursor-zoom-in relative group"
+          onClick={() => setViewingImage(p.imageUrl!)}
+        >
+          <img src={p.imageUrl} alt={p.name} className="w-full h-full object-contain" />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+            <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 text-white text-xs px-3 py-1.5 rounded-full">
+              🔍 Ver em tamanho real
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Site map button — from development */}
+      {dev?.siteMapImage && (
+        <button
+          className="w-full mb-4 flex items-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-100 rounded-xl text-sm text-blue-700 hover:bg-blue-100 transition-colors"
+          onClick={() => setViewingImage(dev.siteMapImage!)}
+        >
+          <span>🗺️</span>
+          <span className="font-medium">Ver planta do empreendimento</span>
+          {p.plotNumber && (
+            <span className="ml-auto text-xs bg-blue-100 text-blue-600 rounded-full px-2 py-0.5">
+              Lote {p.plotNumber}
+            </span>
+          )}
+        </button>
+      )}
+
+      {/* Fullscreen image viewer */}
+      {viewingImage && (
+        <div
+          className="fixed inset-0 z-[200] bg-black/85 flex flex-col items-center justify-center p-4"
+          onClick={() => setViewingImage(null)}
+        >
+          <div className="w-full max-w-4xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-end mb-3">
+              <button onClick={() => setViewingImage(null)} className="text-white/70 hover:text-white text-xl">✕</button>
+            </div>
+            <img src={viewingImage} alt="Imagem" className="w-full max-h-[80vh] object-contain rounded-xl" />
+          </div>
         </div>
       )}
 
@@ -151,9 +198,10 @@ export function PropertyDetail({ property: p, onClose, onEdit, onDelete }: Props
         <MetricCard label="Quartos"  value={p.rooms || '—'} />
         <MetricCard label="Data visita" value={p.visitDate || '—'} />
         <MetricCard label="Visitado" value={p.visited ? '✓ Sim' : 'Não'} color={p.visited ? 'green' : undefined} />
-        {p.eircode && <MetricCard label="Eircode" value={p.eircode} />}
-        {p.trainStation && <MetricCard label="Estação" value={p.trainStation} />}
-        {p.trainMinutesToDublin ? <MetricCard label="Trem p/ Dublin" value={`${p.trainMinutesToDublin} min`} /> : null}
+        {effectiveEircode && <MetricCard label="Eircode" value={effectiveEircode} />}
+        {effectiveStation && <MetricCard label="Estação" value={effectiveStation} />}
+        {effectiveTrain ? <MetricCard label="Trem p/ Dublin" value={`${effectiveTrain} min`} /> : null}
+        {p.plotNumber && <MetricCard label="Nº na planta" value={p.plotNumber} />}
       </div>
 
       {/* Pros / Cons */}

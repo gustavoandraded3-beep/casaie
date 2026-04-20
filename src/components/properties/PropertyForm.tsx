@@ -50,18 +50,16 @@ export function PropertyForm({ initial, onSave, onClose }: Props) {
   const set = <K extends keyof PropertyDraft>(k: K, v: PropertyDraft[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
+  // Derived: selected development for inheritance
   const selectedDev = form.developmentId
     ? developments.find(d => d.id === form.developmentId)
     : null;
-
-  // When a development is selected, location/transport come from there
-  const effectiveCounty    = selectedDev?.county    || form.county    || '';
-  const effectiveCity      = selectedDev?.city      || form.city      || '';
-  const effectiveEircode   = selectedDev?.eircode   || form.eircode   || '';
-  const effectiveStation   = selectedDev?.trainStation || form.trainStation || '';
-  const effectiveTrain     = selectedDev?.trainMinutesToDublin ?? form.trainMinutesToDublin ?? '';
-
   const isLinked = !!selectedDev;
+  const effectiveCounty  = selectedDev?.county    || '';
+  const effectiveCity    = selectedDev?.city      || '';
+  const effectiveEircode = selectedDev?.eircode   || '';
+
+  const validate = (): boolean => {
     const errs: typeof errors = {};
     if (!form.name.trim()) errs.name = 'Nome obrigatório';
     if (!form.price || Number(form.price) <= 0) errs.price = 'Preço obrigatório';
@@ -69,7 +67,6 @@ export function PropertyForm({ initial, onSave, onClose }: Props) {
     return Object.keys(errs).length === 0;
   };
 
-  // Convert uploaded image to base64 and store in imageUrl
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -101,11 +98,8 @@ export function PropertyForm({ initial, onSave, onClose }: Props) {
         {/* Nome */}
         <div className="sm:col-span-2">
           <FormField label="Nome / Identificação da Casa">
-            <Input
-              value={form.name}
-              onChange={(e) => set('name', e.target.value)}
-              placeholder="Ex: Lote 12 — Parkside Court"
-            />
+            <Input value={form.name} onChange={(e) => set('name', e.target.value)}
+              placeholder="Ex: The Heather — Meadow Mill" />
             {errors.name && <p className="text-xs text-red-500 mt-0.5">{errors.name}</p>}
           </FormField>
         </div>
@@ -122,7 +116,10 @@ export function PropertyForm({ initial, onSave, onClose }: Props) {
 
         {/* Empreendimento */}
         <FormField label="Empreendimento" hint="Opcional">
-          <Select value={form.developmentId || ''} onChange={(e) => set('developmentId', e.target.value || undefined)}>
+          <Select
+            value={form.developmentId || ''}
+            onChange={(e) => set('developmentId', e.target.value || undefined)}
+          >
             <option value="">Standalone (sem empreendimento)</option>
             {developments.map((d) => (
               <option key={d.id} value={d.id}>{d.name} — {d.city}</option>
@@ -130,11 +127,11 @@ export function PropertyForm({ initial, onSave, onClose }: Props) {
           </Select>
         </FormField>
 
-        {/* Condado — inherited from dev or editable */}
+        {/* Condado — herdado ou editável */}
         <FormField label="Condado">
           {isLinked ? (
             <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-700">
-              📍 {effectiveCounty || 'Não definido no empreendimento'}
+              <span>📍 {effectiveCounty || 'Não definido no empreendimento'}</span>
               <span className="text-xs text-blue-400 ml-auto">do empreendimento</span>
             </div>
           ) : (
@@ -145,11 +142,11 @@ export function PropertyForm({ initial, onSave, onClose }: Props) {
           )}
         </FormField>
 
-        {/* Cidade */}
+        {/* Cidade — herdada ou editável */}
         <FormField label="Cidade / Localização">
           {isLinked ? (
             <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-700">
-              🏙 {effectiveCity || 'Não definido'}
+              <span>🏙 {effectiveCity || 'Não definido'}</span>
               <span className="text-xs text-blue-400 ml-auto">do empreendimento</span>
             </div>
           ) : (
@@ -158,20 +155,21 @@ export function PropertyForm({ initial, onSave, onClose }: Props) {
           )}
         </FormField>
 
-        {/* Eircode */}
+        {/* Eircode — herdado ou editável */}
         <FormField label="Eircode aproximado">
           {isLinked ? (
             <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-700">
-              {effectiveEircode || 'Não definido'}
+              <span>{effectiveEircode || 'Não definido'}</span>
               <span className="text-xs text-blue-400 ml-auto">do empreendimento</span>
             </div>
           ) : (
-            <Input value={form.eircode || ''} onChange={(e) => set('eircode', e.target.value.toUpperCase())}
+            <Input value={form.eircode || ''}
+              onChange={(e) => set('eircode', e.target.value.toUpperCase())}
               placeholder="W91 AB12" maxLength={8} />
           )}
         </FormField>
 
-        {/* Número do Lote / Planta */}
+        {/* Nº da Casa na Planta */}
         <FormField label="Nº da Casa na Planta" hint="Número do lote conforme a planta do empreendimento">
           <Input
             value={form.plotNumber || ''}
@@ -187,10 +185,12 @@ export function PropertyForm({ initial, onSave, onClose }: Props) {
             placeholder="85" />
         </FormField>
 
-        {/* Quartos — apenas 3 ou 4 */}
+        {/* Quartos — 3 ou 4 */}
         <FormField label="Quartos">
-          <Select value={form.rooms === '' ? '' : String(form.rooms)}
-            onChange={(e) => set('rooms', e.target.value === '' ? '' : Number(e.target.value))}>
+          <Select
+            value={form.rooms === '' ? '' : String(form.rooms)}
+            onChange={(e) => set('rooms', e.target.value === '' ? '' : Number(e.target.value))}
+          >
             <option value="">Selecionar...</option>
             <option value="3">3 quartos</option>
             <option value="4">4 quartos</option>
@@ -200,19 +200,17 @@ export function PropertyForm({ initial, onSave, onClose }: Props) {
         {/* Valor */}
         <div className="sm:col-span-2">
           <FormField label="Valor (€)">
-            <Input
-              type="number" min={0}
-              value={form.price}
+            <Input type="number" min={0} value={form.price}
               onChange={(e) => set('price', e.target.value === '' ? '' : Number(e.target.value))}
-              placeholder="380000"
-            />
+              placeholder="380000" />
             {errors.price && <p className="text-xs text-red-500 mt-0.5">{errors.price}</p>}
           </FormField>
         </div>
 
         {/* Data da visita */}
         <FormField label="Data da Visita (Open Viewing)">
-          <Input type="date" value={form.visitDate} onChange={(e) => set('visitDate', e.target.value)} />
+          <Input type="date" value={form.visitDate}
+            onChange={(e) => set('visitDate', e.target.value)} />
         </FormField>
 
         {/* Visitado */}
@@ -227,30 +225,21 @@ export function PropertyForm({ initial, onSave, onClose }: Props) {
           </label>
         </div>
 
-        {/* Planta / Imagem — upload */}
+        {/* Planta / Imagem da Casa — upload */}
         <div className="sm:col-span-2">
           <FormField label="Planta / Imagem da Casa" hint="Upload de imagem (máx. 2MB — JPG, PNG, WebP)">
             {imagePreview ? (
               <div className="relative">
-                <img
-                  src={imagePreview}
-                  alt="Planta"
-                  className="w-full max-h-48 object-contain rounded-xl border border-gray-200 bg-gray-50"
-                />
-                <button
-                  type="button"
-                  onClick={removeImage}
-                  className="absolute top-2 right-2 bg-white border border-gray-200 rounded-full p-1 shadow-sm hover:bg-red-50 hover:border-red-200 transition-colors"
-                >
+                <img src={imagePreview} alt="Planta"
+                  className="w-full max-h-48 object-contain rounded-xl border border-gray-200 bg-gray-50" />
+                <button type="button" onClick={removeImage}
+                  className="absolute top-2 right-2 bg-white border border-gray-200 rounded-full p-1 shadow-sm hover:bg-red-50 hover:border-red-200 transition-colors">
                   <X size={14} className="text-gray-500" />
                 </button>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center gap-2 hover:border-emerald-300 hover:bg-emerald-50 transition-colors cursor-pointer"
-              >
+              <button type="button" onClick={() => fileInputRef.current?.click()}
+                className="w-full border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center gap-2 hover:border-emerald-300 hover:bg-emerald-50 transition-colors cursor-pointer">
                 <Upload size={20} className="text-gray-400" />
                 <span className="text-sm text-gray-500">
                   {uploading ? 'A carregar...' : 'Clique para fazer upload da planta ou imagem'}
@@ -258,13 +247,8 @@ export function PropertyForm({ initial, onSave, onClose }: Props) {
                 <span className="text-xs text-gray-400">JPG, PNG, WebP — máx. 2MB</span>
               </button>
             )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageUpload}
-            />
+            <input ref={fileInputRef} type="file" accept="image/*"
+              className="hidden" onChange={handleImageUpload} />
           </FormField>
         </div>
 
@@ -305,7 +289,9 @@ export function PropertyForm({ initial, onSave, onClose }: Props) {
 
         {/* Affordable Housing Scheme */}
         <div className="sm:col-span-2">
-          <div className={`rounded-xl border-2 transition-colors ${form.isAffordableScheme ? 'border-violet-300 bg-violet-50' : 'border-gray-100 bg-gray-50'}`}>
+          <div className={`rounded-xl border-2 transition-colors ${
+            form.isAffordableScheme ? 'border-violet-300 bg-violet-50' : 'border-gray-100 bg-gray-50'
+          }`}>
             <div className="p-4">
               <label className="flex items-start gap-3 cursor-pointer select-none">
                 <input type="checkbox"
@@ -363,6 +349,7 @@ export function PropertyForm({ initial, onSave, onClose }: Props) {
             )}
           </div>
         </div>
+
       </div>
 
       <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-100">
